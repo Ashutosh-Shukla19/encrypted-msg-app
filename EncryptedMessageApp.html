@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🔐 Encrypted Message App</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.2.0/crypto-js.min.js"></script>
+  <style>
+    body {
+      font-family: 'Roboto', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      margin: 0;
+      color: #333;
+    }
+    .app-container {
+      max-width: 600px;
+      margin: 40px auto;
+      background: rgba(255,255,255,0.95);
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+      padding: 2rem 2.5rem 1.5rem 2.5rem;
+      backdrop-filter: blur(10px);
+    }
+    h1 {
+      text-align: center;
+      color: #4b2996;
+      margin-bottom: 0.5rem;
+    }
+    p {
+      text-align: center;
+      color: #555;
+      margin-bottom: 2rem;
+    }
+    .section {
+      margin-bottom: 2.5rem;
+    }
+    label {
+      font-weight: 500;
+      display: block;
+      margin-bottom: 0.5rem;
+      color: #333;
+    }
+    textarea, input[type="password"] {
+      width: 100%;
+      padding: 0.9rem;
+      border: 2px solid #e1e5e9;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-family: inherit;
+      margin-bottom: 1rem;
+      resize: vertical;
+      background: #f8f9fa;
+      transition: border 0.2s;
+    }
+    textarea:focus, input[type="password"]:focus {
+      border-color: #764ba2;
+      outline: none;
+    }
+    .btn {
+      width: 100%;
+      padding: 1rem;
+      border: none;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 1rem;
+      transition: background 0.2s, box-shadow 0.2s;
+    }
+    .btn-encrypt {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    .btn-encrypt:hover {
+      background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+      box-shadow: 0 4px 16px rgba(102,126,234,0.15);
+    }
+    .btn-decrypt {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+    }
+    .btn-decrypt:hover {
+      background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
+      box-shadow: 0 4px 16px rgba(245,87,108,0.15);
+    }
+    .result-group {
+      margin-top: 1.2rem;
+      position: relative;
+    }
+    .result-group textarea {
+      background: #f3f3fa;
+      color: #495057;
+      font-family: 'Courier New', monospace;
+      font-size: 0.98rem;
+      margin-bottom: 0.5rem;
+    }
+    .copy-btn {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      padding: 0.4rem 1rem;
+      background: #28a745;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover {
+      background: #218838;
+    }
+    .error-message {
+      background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+      color: white;
+      padding: 1rem;
+      border-radius: 10px;
+      margin-bottom: 1rem;
+      text-align: center;
+      font-weight: 500;
+      box-shadow: 0 4px 15px rgba(255, 107, 107, 0.2);
+    }
+    .footer {
+      text-align: center;
+      color: #fff;
+      margin-top: 2rem;
+      font-size: 0.98rem;
+      opacity: 0.85;
+    }
+    @media (max-width: 700px) {
+      .app-container {
+        padding: 1.2rem 0.5rem 1rem 0.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <h1>🔐 Encrypted Message App</h1>
+    <p>Encrypt and decrypt your messages securely in your browser. <br> <b>No server required!</b></p>
+
+    <div class="section">
+      <label for="encrypt-message">Message to Encrypt:</label>
+      <textarea id="encrypt-message" rows="4" placeholder="Type your secret message..."></textarea>
+      <label for="encrypt-password">Password:</label>
+      <input type="password" id="encrypt-password" placeholder="Enter a password (keep it safe!)" />
+      <button class="btn btn-encrypt" onclick="encryptMessage()">🔒 Encrypt</button>
+      <div class="result-group" id="encrypt-result-group" style="display:none;">
+        <label>Encrypted Message:</label>
+        <textarea id="encrypted-message" rows="3" readonly></textarea>
+        <button class="copy-btn" onclick="copyToClipboard('encrypted-message')">📋 Copy</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <label for="decrypt-message">Encrypted Message to Decrypt:</label>
+      <textarea id="decrypt-message" rows="4" placeholder="Paste encrypted message here..."></textarea>
+      <label for="decrypt-password">Password:</label>
+      <input type="password" id="decrypt-password" placeholder="Enter the password used for encryption" />
+      <button class="btn btn-decrypt" onclick="decryptMessage()">🔓 Decrypt</button>
+      <div class="result-group" id="decrypt-result-group" style="display:none;">
+        <label>Decrypted Message:</label>
+        <textarea id="decrypted-message" rows="3" readonly></textarea>
+        <button class="copy-btn" onclick="copyToClipboard('decrypted-message')">📋 Copy</button>
+      </div>
+    </div>
+
+    <div id="error-message" class="error-message" style="display:none;"></div>
+  </div>
+  <div class="footer">
+    Built by <b>Ashutosh</b> with <b>CryptoJS</b> | 100% client-side | <a href="https://github.com/brix/crypto-js" style="color:#fff;text-decoration:underline;">crypto-js</a>
+  </div>
+  <script>
+    function showError(msg) {
+      const errorDiv = document.getElementById('error-message');
+      errorDiv.textContent = msg;
+      errorDiv.style.display = 'block';
+      setTimeout(() => { errorDiv.style.display = 'none'; }, 4000);
+    }
+
+    function encryptMessage() {
+      const message = document.getElementById('encrypt-message').value;
+      const password = document.getElementById('encrypt-password').value;
+      if (!message.trim()) {
+        showError('Please enter a message to encrypt.');
+        return;
+      }
+      if (!password) {
+        showError('Please enter a password for encryption.');
+        return;
+      }
+      try {
+        const encrypted = CryptoJS.AES.encrypt(message, password).toString();
+        document.getElementById('encrypted-message').value = encrypted;
+        document.getElementById('encrypt-result-group').style.display = 'block';
+      } catch (e) {
+        showError('Encryption failed.');
+      }
+    }
+
+    function decryptMessage() {
+      const encrypted = document.getElementById('decrypt-message').value;
+      const password = document.getElementById('decrypt-password').value;
+      if (!encrypted.trim()) {
+        showError('Please enter an encrypted message to decrypt.');
+        return;
+      }
+      if (!password) {
+        showError('Please enter the password used for encryption.');
+        return;
+      }
+      try {
+        const bytes = CryptoJS.AES.decrypt(encrypted, password);
+        const originalText = bytes.toString(CryptoJS.enc.Utf8);
+        if (!originalText) {
+          showError('Decryption failed. Wrong password or invalid message.');
+          document.getElementById('decrypt-result-group').style.display = 'none';
+          return;
+        }
+        document.getElementById('decrypted-message').value = originalText;
+        document.getElementById('decrypt-result-group').style.display = 'block';
+      } catch (e) {
+        showError('Decryption failed.');
+      }
+    }
+
+    function copyToClipboard(elementId) {
+      const textarea = document.getElementById(elementId);
+      textarea.select();
+      textarea.setSelectionRange(0, 99999);
+      document.execCommand('copy');
+      alert('Copied to clipboard!');
+    }
+  </script>
+</body>
+</html> 
